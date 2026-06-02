@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Candy Bump Quest</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="game">
+      <header class="stage-head">
+        <div class="level-badge">
+          <span>LEVEL</span>
+          <strong id="level">1</strong>
+        </div>
+        <div class="stage-title">
+          <span>MISSION BOARD</span>
+          <strong>CANDY BUMP QUEST</strong>
+        </div>
+      </header>
+
+      <section class="jackpot-panel" aria-label="獎金倍率">
+        <div class="jackpot-stat moves-stat">
+          <span>MOVES LEFT</span>
+          <strong id="moves">25</strong>
+        </div>
+        <div class="jackpot-stat score-stat">
+          <span>SCORE BANK</span>
+          <strong id="score">0</strong>
+        </div>
+        <div class="jackpot-stat prize-stat">
+          <span>WIN POT</span>
+          <strong id="prize">0</strong>
+        </div>
+      </section>
+
+      <section class="board-shell" aria-label="糖果盤面">
+        <div class="board" id="board"></div>
+        <div class="cascade-banner" id="cascadeBanner" aria-hidden="true"></div>
+      </section>
+
+      <section class="goals" id="goals" aria-label="關卡任務"></section>
+
+      <footer class="bottom-panel">
+        <section class="wallet-row" aria-label="資產與下注">
+          <div class="wallet">
+            <span>BALANCE</span>
+            <strong id="balance">1,000</strong>
+          </div>
+          <div class="bet-pill">
+            <span>BET / MOVE</span>
+            <strong id="bet">10</strong>
+          </div>
+          <button id="newLevel">新關卡</button>
+        </section>
+        <p id="message" aria-live="polite">交換相鄰糖果，湊成 3 個以上同色。</p>
+      </footer>
+    </main>
+
+    <section class="jackpot-overlay" id="jackpotOverlay" aria-live="polite" aria-hidden="true">
+      <div class="jackpot-card">
+        <span>JACKPOT CLEAR</span>
+        <strong id="jackpotFormula">0 x 0</strong>
+        <b id="jackpotTotal">0</b>
+      </div>
+    </section>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
