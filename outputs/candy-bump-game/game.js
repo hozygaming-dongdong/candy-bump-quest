@@ -617,7 +617,7 @@ function findPossibleMove() {
 }
 
 function markPops(matches, chain = 1) {
-  const points = candyScore * chain * chain;
+  const points = candyScore * chain;
   matches.forEach((index) => {
     boardEl.children[index]?.classList.add("pop");
     showFloatingScore(index, points);
@@ -690,7 +690,7 @@ function collectMatches(matches, chain) {
     goal.current += removedByColor[goal.colorIndex];
   });
 
-  score += matches.size * candyScore * chain * chain;
+  score += matches.size * candyScore * chain;
   setMessage(chain > 1 ? `Chain x${chain}! Removed ${matches.size} candies.` : `Removed ${matches.size} candies.`);
 }
 
