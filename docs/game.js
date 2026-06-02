@@ -81,15 +81,22 @@ function setMessage(text) {
 
 function showCascade(chain, removedCount) {
   if (chain <= 1) return;
-  cascadeBannerEl.textContent = chain >= 4 ? `MEGA CASCADE x${chain}` : `CASCADE x${chain}`;
-  cascadeBannerEl.classList.remove("show");
-  void cascadeBannerEl.offsetWidth;
-  cascadeBannerEl.classList.add("show");
+  showStageBanner(chain >= 4 ? `MEGA CASCADE x${chain}` : `CASCADE x${chain}`, 620);
   playCascadeSound(chain, removedCount);
 }
 
 function resetCascadeEffects() {
   boardEl.classList.remove("drop-in");
+}
+
+async function showStageBanner(text, duration = 900, sound = null) {
+  cascadeBannerEl.textContent = text;
+  cascadeBannerEl.style.setProperty("--banner-duration", `${duration}ms`);
+  cascadeBannerEl.classList.remove("show");
+  void cascadeBannerEl.offsetWidth;
+  cascadeBannerEl.classList.add("show");
+  if (sound) playSound(sound);
+  await wait(duration);
 }
 
 function unlockAudio() {
@@ -718,44 +725,48 @@ function goalsComplete() {
   return goals.every((goal) => goal.current >= goal.target);
 }
 
-function showJackpot(prize) {
-  jackpotFormulaEl.textContent = `${formatNumber(score)} x ${moves}`;
-  jackpotTotalEl.textContent = formatNumber(prize);
+async function showJackpot(prize) {
   jackpotOverlayEl.setAttribute("aria-hidden", "false");
-  jackpotOverlayEl.classList.remove("show");
-  void jackpotOverlayEl.offsetWidth;
   jackpotOverlayEl.classList.add("show");
+  jackpotFormulaEl.textContent = `Score ${formatNumber(score)}`;
+  jackpotTotalEl.textContent = "";
+  await wait(700);
+  jackpotFormulaEl.textContent = `${formatNumber(score)} x ${moves}`;
+  await wait(700);
+  jackpotTotalEl.textContent = formatNumber(prize);
   playSound("jackpot");
-  window.setTimeout(() => {
-    jackpotOverlayEl.classList.remove("show");
-    jackpotOverlayEl.setAttribute("aria-hidden", "true");
-  }, 2600);
+  await wait(2300);
+  jackpotOverlayEl.classList.remove("show");
+  jackpotOverlayEl.setAttribute("aria-hidden", "true");
 }
 
 async function runPartyTime() {
   partyActive = true;
   locked = true;
-  setMessage("PARTY TIME! Bonus specials are firing before jackpot.");
-  cascadeBannerEl.textContent = "PARTY TIME";
-  cascadeBannerEl.classList.remove("show");
-  void cascadeBannerEl.offsetWidth;
-  cascadeBannerEl.classList.add("show");
-  playSound("party");
-  await wait(620);
+  setMessage("Mission complete. Bonus round is starting.");
+  await showStageBanner("MISSION COMPLETE", 1100, "win");
+  await wait(500);
+  setMessage("PARTY TIME! Bonus specials are charging.");
+  await showStageBanner("PARTY TIME", 950, "party");
 
   const normalIndices = board
     .map((candy, index) => ({ candy, index }))
     .filter(({ candy }) => candy && candy.special !== "bomb")
     .sort(() => Math.random() - 0.5)
-    .slice(0, Math.min(6, Math.max(3, Math.floor(moves / 4) + 2)));
+    .slice(0, Math.min(6, Math.max(4, Math.floor(moves / 4) + 2)));
   const specials = ["h", "v", "wrap"];
 
-  normalIndices.forEach(({ candy, index }, order) => {
+  for (const [order, { candy, index }] of normalIndices.entries()) {
     board[index] = createCandy(candy.color, specials[order % specials.length]);
     board[index].party = true;
-  });
-  renderAll();
-  await wait(420);
+    renderAll();
+    boardEl.children[index]?.classList.add("upgrade-flash");
+    playSound("select");
+    await wait(360);
+  }
+  await wait(650);
+  setMessage("Party specials are firing.");
+  await showStageBanner("BONUS FIRE", 700, "party");
 
   for (let fired = 0; fired < normalIndices.length; fired += 1) {
     const index = board.findIndex((candy) => candy?.party);
@@ -766,16 +777,19 @@ async function runPartyTime() {
     markSpecialEffects(new Set([index]));
     markPops(matches, 2);
     playSound("special");
-    await wait(260);
+    await wait(420);
     collectMatches(matches, 2);
     removeMatches(matches);
     collapseBoard();
     fillBoard();
     renderAll();
-    await wait(120);
+    await wait(260);
     await resolveBoard(findMatchInfo(), []);
+    await wait(420);
   }
 
+  setMessage("Final score is ready.");
+  await wait(800);
   partyActive = false;
 }
 
@@ -786,7 +800,7 @@ async function checkLevelState() {
     await runPartyTime();
     const prize = score * moves;
     balance += prize;
-    showJackpot(prize);
+    await showJackpot(prize);
     setMessage(`Level clear! Prize = ${formatNumber(score)} x ${moves} = ${formatNumber(prize)}.`);
     renderStats();
     return;
