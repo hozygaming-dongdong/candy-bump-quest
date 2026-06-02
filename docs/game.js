@@ -79,8 +79,20 @@ function setMessage(text) {
   messageEl.textContent = text;
 }
 
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "en-US";
+  utterance.rate = 1.08;
+  utterance.pitch = 1.08;
+  utterance.volume = 0.9;
+  window.speechSynthesis.speak(utterance);
+}
+
 function showCascade(chain, removedCount) {
   if (chain <= 1) return;
+  speak(chain >= 4 ? "Mega combo!" : `Combo ${chain}!`);
   showStageBanner(chain >= 4 ? `MEGA CASCADE x${chain}` : `CASCADE x${chain}`, 620);
   playCascadeSound(chain, removedCount);
 }
@@ -752,9 +764,11 @@ async function runPartyTime() {
   partyActive = true;
   locked = true;
   setMessage("Mission complete. Bonus round is starting.");
+  speak("Mission complete!");
   await showStageBanner("MISSION COMPLETE", 1100, "win");
   await wait(500);
   setMessage("PARTY TIME! Bonus specials are charging.");
+  speak("Party time!");
   await showStageBanner("PARTY TIME", 950, "party");
 
   const normalIndices = board
