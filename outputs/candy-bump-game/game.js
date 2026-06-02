@@ -235,7 +235,7 @@ function generateGoals() {
   const shuffled = [...colors.keys()].sort(() => Math.random() - 0.5);
   goals = shuffled.slice(0, 3).map((colorIndex, order) => ({
     colorIndex,
-    target: 5 + Math.min(level, 5) + order * 2 + Math.floor(Math.random() * 3),
+    target: 7 + Math.min(level, 5) + order * 2 + Math.floor(Math.random() * 3),
     current: 0,
   }));
 }
