@@ -398,7 +398,7 @@ async function resolveColorBomb(targetColor) {
     if (candy.special === "bomb" || targetColor === null || candy.color === targetColor) matches.add(index);
   });
   markColorBombEffect(targetColor);
-  markPops(matches);
+    markPops(matches, 1);
   playSound("bomb");
   await wait(420);
   collectMatches(matches, 1);
@@ -419,7 +419,7 @@ async function resolveBoard(initialInfo = null, moved = []) {
     const created = chain === 1 ? chooseCreatedSpecial(info, moved) : null;
     const removal = expandSpecials(info.matches, created?.index ?? null);
     const specialTriggered = markSpecialEffects(info.matches, created?.index ?? null);
-    markPops(removal);
+    markPops(removal, chain);
     playSound(specialTriggered || created ? "special" : "match");
     await wait(specialTriggered ? 360 : 240);
     collectMatches(removal, chain);
@@ -602,10 +602,24 @@ function findPossibleMove() {
   return [];
 }
 
-function markPops(matches) {
+function markPops(matches, chain = 1) {
+  const points = candyScore * chain * chain;
   matches.forEach((index) => {
     boardEl.children[index]?.classList.add("pop");
+    showFloatingScore(index, points);
   });
+}
+
+function showFloatingScore(index, points) {
+  const tile = boardEl.children[index];
+  if (!tile) return;
+  const label = document.createElement("span");
+  label.className = "float-score";
+  label.textContent = `+${points}`;
+  label.style.left = `${tile.offsetLeft + tile.offsetWidth * 0.58}px`;
+  label.style.top = `${tile.offsetTop + tile.offsetHeight * 0.12}px`;
+  boardEl.append(label);
+  window.setTimeout(() => label.remove(), 760);
 }
 
 function markSpecialEffects(matches, preserveIndex = null) {

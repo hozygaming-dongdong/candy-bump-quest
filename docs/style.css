@@ -259,9 +259,21 @@ strong {
   width: 100%;
   aspect-ratio: 1;
   display: grid;
+  position: relative;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
   gap: clamp(4px, 1.4vw, 8px);
+}
+
+.float-score {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  color: rgba(255, 242, 169, 0.92);
+  font-size: clamp(12px, 3.2vw, 18px);
+  font-weight: 1000;
+  text-shadow: 0 2px 0 rgba(90, 24, 100, 0.7), 0 0 10px rgba(255, 212, 92, 0.5);
+  animation: floatScore 760ms ease-out forwards;
 }
 
 .tile {
@@ -571,6 +583,20 @@ strong {
   100% {
     opacity: 0;
     transform: scale(1.02);
+  }
+}
+
+@keyframes floatScore {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  20% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-18px);
   }
 }
 
