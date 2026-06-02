@@ -39,6 +39,7 @@ let audioContext = null;
 let musicNodes = null;
 let locked = false;
 let levelOver = false;
+let partyActive = false;
 
 function createCandy(color = randomColor(), special = null) {
   return { color, special };
@@ -156,6 +157,12 @@ function playSound(name) {
     playTone(659, 0.09, "square", 0.09, 0.16);
     playTone(988, 0.16, "triangle", 0.1, 0.26);
     playTone(1318, 0.28, "sine", 0.1, 0.42);
+  }
+  if (name === "party") {
+    playTone(523, 0.08, "square", 0.08);
+    playTone(659, 0.08, "square", 0.08, 0.08);
+    playTone(784, 0.09, "square", 0.08, 0.16);
+    playTone(1046, 0.18, "triangle", 0.09, 0.26);
   }
   if (name === "lose") playTone(150, 0.34, "sawtooth", 0.055);
 }
@@ -386,7 +393,7 @@ async function applyValidMove(action) {
   moves -= 1;
   setMessage(`Valid move. BET -${betPerMove}.`);
   await action();
-  checkLevelState();
+  await checkLevelState();
 }
 
 async function resolveColorBomb(targetColor) {
@@ -725,12 +732,60 @@ function showJackpot(prize) {
   }, 2600);
 }
 
-function checkLevelState() {
+async function runPartyTime() {
+  partyActive = true;
+  locked = true;
+  setMessage("PARTY TIME! Bonus specials are firing before jackpot.");
+  cascadeBannerEl.textContent = "PARTY TIME";
+  cascadeBannerEl.classList.remove("show");
+  void cascadeBannerEl.offsetWidth;
+  cascadeBannerEl.classList.add("show");
+  playSound("party");
+  await wait(620);
+
+  const normalIndices = board
+    .map((candy, index) => ({ candy, index }))
+    .filter(({ candy }) => candy && candy.special !== "bomb")
+    .sort(() => Math.random() - 0.5)
+    .slice(0, Math.min(6, Math.max(3, Math.floor(moves / 4) + 2)));
+  const specials = ["h", "v", "wrap"];
+
+  normalIndices.forEach(({ candy, index }, order) => {
+    board[index] = createCandy(candy.color, specials[order % specials.length]);
+    board[index].party = true;
+  });
   renderAll();
-  if (goalsComplete()) {
+  await wait(420);
+
+  for (let fired = 0; fired < normalIndices.length; fired += 1) {
+    const index = board.findIndex((candy) => candy?.party);
+    if (index < 0) break;
+    delete board[index].party;
+    if (!board[index]) continue;
+    const matches = expandSpecials(new Set([index]));
+    markSpecialEffects(new Set([index]));
+    markPops(matches, 2);
+    playSound("special");
+    await wait(260);
+    collectMatches(matches, 2);
+    removeMatches(matches);
+    collapseBoard();
+    fillBoard();
+    renderAll();
+    await wait(120);
+    await resolveBoard(findMatchInfo(), []);
+  }
+
+  partyActive = false;
+}
+
+async function checkLevelState() {
+  renderAll();
+  if (goalsComplete() && !partyActive) {
+    levelOver = true;
+    await runPartyTime();
     const prize = score * moves;
     balance += prize;
-    levelOver = true;
     showJackpot(prize);
     setMessage(`Level clear! Prize = ${formatNumber(score)} x ${moves} = ${formatNumber(prize)}.`);
     renderStats();
@@ -758,6 +813,7 @@ function startLevel(nextLevel = false) {
   window.clearTimeout(hintTimer);
   locked = false;
   levelOver = false;
+  partyActive = false;
   jackpotOverlayEl.classList.remove("show");
   jackpotOverlayEl.setAttribute("aria-hidden", "true");
   generateGoals();
