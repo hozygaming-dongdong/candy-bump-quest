@@ -412,9 +412,9 @@ async function resolveColorBomb(targetColor) {
     if (candy.special === "bomb" || targetColor === null || candy.color === targetColor) matches.add(index);
   });
   markColorBombEffect(targetColor);
-    markPops(matches, 1);
-  playSound("bomb");
-  await wait(420);
+  markPops(matches, 1);
+  await showStageBanner("COLOR BOMB", 820, "bomb");
+  await wait(260);
   collectMatches(matches, 1);
   removeMatches(matches);
   collapseBoard();
@@ -434,8 +434,13 @@ async function resolveBoard(initialInfo = null, moved = []) {
     const removal = expandSpecials(info.matches, created?.index ?? null);
     const specialTriggered = markSpecialEffects(info.matches, created?.index ?? null);
     markPops(removal, chain);
-    playSound(specialTriggered || created ? "special" : "match");
-    await wait(specialTriggered ? 360 : 240);
+    if (specialTriggered) {
+      await showStageBanner(specialTriggered, 700, "special");
+      await wait(180);
+    } else {
+      playSound(created ? "special" : "match");
+      await wait(created ? 420 : 240);
+    }
     collectMatches(removal, chain);
     showCascade(chain, removal.size);
     removeMatches(removal);
@@ -637,13 +642,13 @@ function showFloatingScore(index, points) {
 }
 
 function markSpecialEffects(matches, preserveIndex = null) {
-  let hasSpecial = false;
+  const triggered = [];
   matches.forEach((index) => {
     if (index === preserveIndex) return;
     const candy = board[index];
     const tile = boardEl.children[index];
     if (!candy?.special || !tile) return;
-    hasSpecial = true;
+    triggered.push(candy.special);
     tile.classList.add("special-flash");
 
     if (candy.special === "h") {
@@ -666,7 +671,10 @@ function markSpecialEffects(matches, preserveIndex = null) {
       }
     }
   });
-  return hasSpecial;
+  if (triggered.includes("wrap")) return "WRAPPED BLAST";
+  if (triggered.includes("h")) return "ROW BLAST";
+  if (triggered.includes("v")) return "COLUMN BLAST";
+  return false;
 }
 
 function markColorBombEffect(targetColor) {
@@ -762,7 +770,7 @@ async function runPartyTime() {
     renderAll();
     boardEl.children[index]?.classList.add("upgrade-flash");
     playSound("select");
-    await wait(360);
+    await wait(520);
   }
   await wait(650);
   setMessage("Party specials are firing.");
@@ -774,10 +782,10 @@ async function runPartyTime() {
     delete board[index].party;
     if (!board[index]) continue;
     const matches = expandSpecials(new Set([index]));
-    markSpecialEffects(new Set([index]));
+    const specialLabel = markSpecialEffects(new Set([index]));
     markPops(matches, 2);
-    playSound("special");
-    await wait(420);
+    await showStageBanner(specialLabel || "BONUS BLAST", 650, "special");
+    await wait(180);
     collectMatches(matches, 2);
     removeMatches(matches);
     collapseBoard();
