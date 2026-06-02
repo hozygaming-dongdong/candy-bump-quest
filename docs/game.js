@@ -759,7 +759,7 @@ async function runPartyTime() {
 
   const normalIndices = board
     .map((candy, index) => ({ candy, index }))
-    .filter(({ candy }) => candy && candy.special !== "bomb")
+    .filter(({ candy }) => candy && !candy.special)
     .sort(() => Math.random() - 0.5)
     .slice(0, Math.min(6, Math.max(4, Math.floor(moves / 4) + 2)));
   const specials = ["h", "v", "wrap"];
@@ -776,11 +776,41 @@ async function runPartyTime() {
   setMessage("Party specials are firing.");
   await showStageBanner("BONUS FIRE", 700, "party");
 
-  for (let fired = 0; fired < normalIndices.length; fired += 1) {
-    const index = board.findIndex((candy) => candy?.party);
-    if (index < 0) break;
-    delete board[index].party;
-    if (!board[index]) continue;
+  let index = findNextPartySpecial();
+  while (index >= 0) {
+    await firePartySpecial(index);
+    await wait(420);
+    index = findNextPartySpecial();
+  }
+
+  setMessage("All party specials fired. Final score is ready.");
+  await wait(800);
+  partyActive = false;
+}
+
+function findNextPartySpecial() {
+  const partyIndex = board.findIndex((candy) => candy?.party && candy.special);
+  if (partyIndex >= 0) return partyIndex;
+  return board.findIndex((candy) => candy?.special);
+}
+
+function pickColorBombTarget() {
+  const candidates = board.filter((candy) => candy && candy.special !== "bomb").map((candy) => candy.color);
+  if (!candidates.length) return null;
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+async function firePartySpecial(index) {
+  const candy = board[index];
+  if (!candy?.special) return;
+  delete candy.party;
+
+  if (candy.special === "bomb") {
+    await resolveColorBomb(pickColorBombTarget());
+    return;
+  }
+
+  if (index < 0 || !board[index]) return;
     const matches = expandSpecials(new Set([index]));
     const specialLabel = markSpecialEffects(new Set([index]));
     markPops(matches, 2);
@@ -793,12 +823,6 @@ async function runPartyTime() {
     renderAll();
     await wait(260);
     await resolveBoard(findMatchInfo(), []);
-    await wait(420);
-  }
-
-  setMessage("Final score is ready.");
-  await wait(800);
-  partyActive = false;
 }
 
 async function checkLevelState() {
